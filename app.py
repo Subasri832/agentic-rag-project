@@ -1,22 +1,96 @@
-import streamlit as st
+import os
+import shutil
+import threading
 import requests
+import streamlit as st
+import uvicorn
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from dotenv import load_dotenv
+from app.rag import load_and_index_pdf, load_existing_vectorstore
+from app.agent import run_agent
 
-# Backend URL
+# Load API keys
+load_dotenv()
+
+# ─── FASTAPI BACKEND ─────────────────────────────────────
+fastapi_app = FastAPI()
+
+fastapi_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+UPLOAD_FOLDER = "app/uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+class QueryRequest(BaseModel):
+    question: str
+
+
+@fastapi_app.get("/")
+def home():
+    return {"status": "running"}
+
+
+@fastapi_app.post("/upload")
+async def upload_pdf(file: UploadFile = File(...)):
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files allowed")
+    try:
+        file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+        with open(file_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+        load_and_index_pdf(file_path)
+        return {"status": "success", "message": f"{file.filename} uploaded!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@fastapi_app.post("/ask")
+async def ask_question(request: QueryRequest):
+    if not request.question.strip():
+        raise HTTPException(status_code=400, detail="Question cannot be empty")
+    try:
+        answer = run_agent(request.question)
+        return {"status": "success", "answer": answer}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@fastapi_app.get("/status")
+def check_status():
+    vectorstore_path = "app/vectorstore"
+    has_documents = os.path.exists(vectorstore_path) and \
+                    len(os.listdir(vectorstore_path)) > 0
+    return {"status": "ready", "documents_uploaded": has_documents}
+
+
+# ─── START FASTAPI IN BACKGROUND THREAD ──────────────────
+def run_fastapi():
+    uvicorn.run(fastapi_app, host="0.0.0.0", port=8000)
+
+
+threading.Thread(target=run_fastapi, daemon=True).start()
+
+# ─── STREAMLIT FRONTEND ───────────────────────────────────
 API_URL = "http://127.0.0.1:8000"
 
-# ─── PAGE CONFIG ─────────────────────────────────────────
 st.set_page_config(
     page_title="Agentic RAG Assistant",
     page_icon="🤖",
     layout="wide"
 )
 
-# ─── HEADER ──────────────────────────────────────────────
 st.title("🤖 Agentic Document Intelligence")
 st.markdown("Upload your documents and ask questions — AI will search your docs and the web!")
 st.divider()
 
-# ─── SIDEBAR: FILE UPLOAD ────────────────────────────────
 with st.sidebar:
     st.header("📄 Upload Document")
     st.markdown("Upload a PDF to get started")
@@ -42,7 +116,7 @@ with st.sidebar:
                         files=files
                     )
                     if response.status_code == 200:
-                        st.success(f"✅ {uploaded_file.name} uploaded successfully!")
+                        st.success(f"✅ {uploaded_file.name} uploaded!")
                         st.session_state["doc_uploaded"] = True
                     else:
                         st.error("Upload failed. Try again.")
@@ -51,7 +125,6 @@ with st.sidebar:
 
     st.divider()
 
-    # Check document status
     try:
         status = requests.get(f"{API_URL}/status").json()
         if status.get("documents_uploaded"):
@@ -59,7 +132,7 @@ with st.sidebar:
         else:
             st.warning("⚠️ No documents uploaded yet")
     except:
-        st.error("❌ Backend not running")
+        st.warning("⏳ Backend starting...")
 
     st.divider()
     st.markdown("**How to use:**")
@@ -69,29 +142,21 @@ with st.sidebar:
     st.markdown("4. AI searches docs + web!")
 
 
-# ─── CHAT HISTORY ────────────────────────────────────────
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-
-# ─── CHAT INPUT ──────────────────────────────────────────
 if prompt := st.chat_input("Ask anything about your document or any topic..."):
-
-    # Add user message to chat
     st.session_state.messages.append({
         "role": "user",
         "content": prompt
     })
-
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Get answer from agent
     with st.chat_message("assistant"):
         with st.spinner("🤔 Agent is thinking..."):
             try:
@@ -99,25 +164,19 @@ if prompt := st.chat_input("Ask anything about your document or any topic..."):
                     f"{API_URL}/ask",
                     json={"question": prompt}
                 )
-
                 if response.status_code == 200:
                     answer = response.json().get("answer", "No answer received")
                 else:
                     answer = f"Error: {response.status_code}"
-
             except Exception as e:
                 answer = f"Could not connect to backend: {str(e)}"
 
         st.markdown(answer)
-
-        # Add assistant message to chat history
         st.session_state.messages.append({
             "role": "assistant",
             "content": answer
         })
 
-
-# ─── FOOTER ──────────────────────────────────────────────
 st.divider()
 st.markdown(
     "<p style='text-align:center; color:gray;'>Agentic RAG Document Intelligence | Built with LangChain, LangGraph & Streamlit</p>",
