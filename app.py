@@ -8,8 +8,10 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from app.rag import load_and_index_pdf, load_existing_vectorstore
-from app.agent import run_agent
+import sys
+sys.path.insert(0, '/app')
+from rag import load_and_index_pdf, load_existing_vectorstore
+from agent import run_agent
 
 # Load API keys
 load_dotenv()
@@ -25,7 +27,7 @@ fastapi_app.add_middleware(
     allow_headers=["*"],
 )
 
-UPLOAD_FOLDER = "app/uploads"
+UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
@@ -65,7 +67,7 @@ async def ask_question(request: QueryRequest):
 
 @fastapi_app.get("/status")
 def check_status():
-    vectorstore_path = "app/vectorstore"
+    vectorstore_path = "vectorstore"
     has_documents = os.path.exists(vectorstore_path) and \
                     len(os.listdir(vectorstore_path)) > 0
     return {"status": "ready", "documents_uploaded": has_documents}
