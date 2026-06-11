@@ -4,7 +4,7 @@ from langchain_groq import ChatGroq
 from langchain.tools import tool
 from langgraph.prebuilt import create_react_agent
 from tavily import TavilyClient
-from app.rag import search_documents, load_existing_vectorstore
+from .rag import search_documents, load_existing_vectorstore
 
 # Load API keys
 load_dotenv()

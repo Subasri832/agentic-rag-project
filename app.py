@@ -12,7 +12,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 from rag import load_and_index_pdf, load_existing_vectorstore
-from agent import run_agent
+from app.agent import run_agent
 # Load API keys
 load_dotenv()
 
