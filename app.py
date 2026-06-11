@@ -9,10 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import sys
-sys.path.insert(0, '/app')
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 from rag import load_and_index_pdf, load_existing_vectorstore
 from agent import run_agent
-
 # Load API keys
 load_dotenv()
 
