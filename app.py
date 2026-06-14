@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import threading
 import requests
@@ -9,15 +10,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-# Fix import paths
-from app.rag import load_and_index_pdf, load_existing_vectorstore
-from app.agent import run_agent
+# Fix import paths for Hugging Face
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
+from rag import load_and_index_pdf, load_existing_vectorstore
+from agent import run_agent
 
 # Load API keys
 load_dotenv()
 
-# ─── FASTAPI BACKEND ─────────────────────────────────────
-api= FastAPI()
+# FASTAPI BACKEND
+api = FastAPI()
 
 api.add_middleware(
     CORSMiddleware,
@@ -29,6 +31,7 @@ api.add_middleware(
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs("vectorstore", exist_ok=True)
 
 
 class QueryRequest(BaseModel):
@@ -73,14 +76,14 @@ def check_status():
     return {"status": "ready", "documents_uploaded": has_documents}
 
 
-# ─── START FASTAPI IN BACKGROUND THREAD ──────────────────
+# START FASTAPI IN BACKGROUND THREAD
 def run_fastapi():
     uvicorn.run(api, host="0.0.0.0", port=8000)
 
 thread = threading.Thread(target=run_fastapi, daemon=True)
 thread.start()
 
-# ─── STREAMLIT FRONTEND ───────────────────────────────────
+# STREAMLIT FRONTEND
 API_URL = "http://127.0.0.1:8000"
 
 st.set_page_config(
@@ -110,7 +113,10 @@ with st.sidebar:
                             "application/pdf"
                         )
                     }
-                    response = requests.post(f"{API_URL}/upload", files=files)
+                    response = requests.post(
+                        f"{API_URL}/upload",
+                        files=files
+                    )
                     if response.status_code == 200:
                         st.success(f"✅ {uploaded_file.name} uploaded!")
                         st.session_state["doc_uploaded"] = True
@@ -146,14 +152,20 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 if prompt := st.chat_input("Ask anything about your document or any topic..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.messages.append({
+        "role": "user",
+        "content": prompt
+    })
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
         with st.spinner("🤔 Agent is thinking..."):
             try:
-                response = requests.post(f"{API_URL}/ask", json={"question": prompt})
+                response = requests.post(
+                    f"{API_URL}/ask",
+                    json={"question": prompt}
+                )
                 if response.status_code == 200:
                     answer = response.json().get("answer", "No answer received")
                 else:
@@ -162,7 +174,10 @@ if prompt := st.chat_input("Ask anything about your document or any topic..."):
                 answer = f"Could not connect to backend: {str(e)}"
 
         st.markdown(answer)
-        st.session_state.messages.append({"role": "assistant", "content": answer})
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": answer
+        })
 
 st.divider()
 st.markdown(
