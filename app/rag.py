@@ -7,8 +7,8 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 load_dotenv()
 
-UPLOAD_FOLDER = "app/uploads"
-VECTORSTORE_FOLDER = "app/vectorstore"
+UPLOAD_FOLDER = "uploads"
+VECTORSTORE_FOLDER = "vectorstore"
 
 # Load embeddings model once globally
 embeddings = HuggingFaceEmbeddings(
