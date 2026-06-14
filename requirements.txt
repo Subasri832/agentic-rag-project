@@ -13,4 +13,5 @@ tavily-python
 sentence-transformers
 torch
 torchvision
+torchaudio
 requests
