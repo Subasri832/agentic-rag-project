@@ -1,3 +1,4 @@
+st.title("✨ Updated Version ✨")
 import os
 import sys
 
@@ -9,7 +10,8 @@ import streamlit as st
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
 from rag import load_and_index_pdf, load_existing_vectorstore, search_documents
-from agent import run_agent
+from agent import my_function_name as run_agent
+
 
 UPLOAD_DIR = "/tmp/uploads"
 VECTORSTORE_DIR = "/tmp/vectorstore"
