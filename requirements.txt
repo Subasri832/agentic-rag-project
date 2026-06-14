@@ -3,15 +3,14 @@ langchain-community
 langchain-openai
 langchain-groq
 langchain-huggingface
+langchain-text-splitters
 langgraph
 faiss-cpu
 streamlit
 pypdf
 python-dotenv
 tavily-python
-deep-translator
 sentence-transformers
 torch
-scikit-learn
-scipy
+torchvision
 requests
