@@ -2,88 +2,86 @@ import os
 import sys
 import shutil
 import threading
+import time
 import requests
 import streamlit as st
-import uvicorn
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from dotenv import load_dotenv
 
-# Fix import paths for Hugging Face
+# Fix import paths
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
-from rag import load_and_index_pdf, load_existing_vectorstore
-from agent import run_agent
 
-# Load API keys
+from dotenv import load_dotenv
 load_dotenv()
 
-# FASTAPI BACKEND
-fastapi_app = FastAPI()
+# ─── START FASTAPI IN BACKGROUND ─────────────────────────
+def start_backend():
+    import uvicorn
+    from fastapi import FastAPI, UploadFile, File, HTTPException
+    from fastapi.middleware.cors import CORSMiddleware
+    from pydantic import BaseModel
+    from rag import load_and_index_pdf
+    from agent import run_agent
 
-fastapi_app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    backend = FastAPI()
 
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs("vectorstore", exist_ok=True)
+    backend.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
+    UPLOAD_FOLDER = "uploads"
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs("vectorstore", exist_ok=True)
 
-class QueryRequest(BaseModel):
-    question: str
+    class QueryRequest(BaseModel):
+        question: str
 
+    @backend.get("/")
+    def home():
+        return {"status": "running"}
 
-@fastapi_app.get("/")
-def home():
-    return {"status": "running"}
+    @backend.get("/status")
+    def check_status():
+        vectorstore_path = "vectorstore"
+        has_documents = os.path.exists(vectorstore_path) and \
+                        len(os.listdir(vectorstore_path)) > 0
+        return {"status": "ready", "documents_uploaded": has_documents}
 
+    @backend.post("/upload")
+    async def upload_pdf(file: UploadFile = File(...)):
+        if not file.filename.endswith(".pdf"):
+            raise HTTPException(status_code=400, detail="Only PDF files allowed")
+        try:
+            file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+            with open(file_path, "wb") as f:
+                shutil.copyfileobj(file.file, f)
+            load_and_index_pdf(file_path)
+            return {"status": "success", "message": f"{file.filename} uploaded!"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
-@fastapi_app.post("/upload")
-async def upload_pdf(file: UploadFile = File(...)):
-    if not file.filename.endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files allowed")
-    try:
-        file_path = os.path.join(UPLOAD_FOLDER, file.filename)
-        with open(file_path, "wb") as f:
-            shutil.copyfileobj(file.file, f)
-        load_and_index_pdf(file_path)
-        return {"status": "success", "message": f"{file.filename} uploaded!"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    @backend.post("/ask")
+    async def ask_question(request: QueryRequest):
+        if not request.question.strip():
+            raise HTTPException(status_code=400, detail="Empty question")
+        try:
+            answer = run_agent(request.question)
+            return {"status": "success", "answer": answer}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
-
-@fastapi_app.post("/ask")
-async def ask_question(request: QueryRequest):
-    if not request.question.strip():
-        raise HTTPException(status_code=400, detail="Question cannot be empty")
-    try:
-        answer = run_agent(request.question)
-        return {"status": "success", "answer": answer}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@fastapi_app.get("/status")
-def check_status():
-    vectorstore_path = "vectorstore"
-    has_documents = os.path.exists(vectorstore_path) and \
-                    len(os.listdir(vectorstore_path)) > 0
-    return {"status": "ready", "documents_uploaded": has_documents}
+    uvicorn.run(backend, host="0.0.0.0", port=8000)
 
 
-# START FASTAPI IN BACKGROUND THREAD
-def run_fastapi():
-    uvicorn.run(fastapi_app, host="0.0.0.0", port=8000)
-
-thread = threading.Thread(target=run_fastapi, daemon=True)
+# Start backend in background thread
+thread = threading.Thread(target=start_backend, daemon=True)
 thread.start()
 
-# STREAMLIT FRONTEND
+# Give backend time to start
+time.sleep(3)
+
+# ─── STREAMLIT FRONTEND ───────────────────────────────────
 API_URL = "http://127.0.0.1:8000"
 
 st.set_page_config(
@@ -128,7 +126,7 @@ with st.sidebar:
     st.divider()
 
     try:
-        status = requests.get(f"{API_URL}/status").json()
+        status = requests.get(f"{API_URL}/status", timeout=3).json()
         if status.get("documents_uploaded"):
             st.success("📚 Documents ready!")
         else:
@@ -164,7 +162,8 @@ if prompt := st.chat_input("Ask anything about your document or any topic..."):
             try:
                 response = requests.post(
                     f"{API_URL}/ask",
-                    json={"question": prompt}
+                    json={"question": prompt},
+                    timeout=60
                 )
                 if response.status_code == 200:
                     answer = response.json().get("answer", "No answer received")
