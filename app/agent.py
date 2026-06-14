@@ -1,4 +1,5 @@
 import os
+import streamlit as st
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain.tools import tool
@@ -6,27 +7,32 @@ from langgraph.prebuilt import create_react_agent
 from tavily import TavilyClient
 from app.rag import search_documents, load_existing_vectorstore
 
-# Load API keys
 load_dotenv()
+
+# ✅ Read secrets from Streamlit Cloud OR .env locally
+def get_secret(key: str) -> str:
+    try:
+        return st.secrets[key]
+    except Exception:
+        return os.getenv(key, "")
 
 # Initialize LLM
 llm = ChatGroq(
     model="llama-3.3-70b-versatile",
     temperature=0,
-    groq_api_key=os.getenv("GROQ_API_KEY")
+    groq_api_key=get_secret("GROQ_API_KEY")
 )
 
-# Initialize Tavily web search client
+# Initialize Tavily
 tavily_client = TavilyClient(
-    api_key=os.getenv("TAVILY_API_KEY")
+    api_key=get_secret("TAVILY_API_KEY")
 )
 
-# Load vectorstore once when agent starts
+# Load vectorstore once
 vectorstore = None
 
 
 def get_vectorstore():
-    """Load vectorstore if it exists"""
     global vectorstore
     if vectorstore is None:
         try:
@@ -36,7 +42,6 @@ def get_vectorstore():
     return vectorstore
 
 
-# ─── TOOL 1: Search Documents ───────────────────────────
 @tool
 def search_document_tool(query: str) -> str:
     """
@@ -46,15 +51,12 @@ def search_document_tool(query: str) -> str:
     vs = get_vectorstore()
     if vs is None:
         return "No documents uploaded yet. Please upload a PDF first."
-
     results = search_documents(query, vs)
     if not results:
         return "No relevant information found in documents."
-
     return f"From documents:\n{results}"
 
 
-# ─── TOOL 2: Web Search ─────────────────────────────────
 @tool
 def web_search_tool(query: str) -> str:
     """
@@ -63,26 +65,18 @@ def web_search_tool(query: str) -> str:
     or user asks about recent/general topics.
     """
     try:
-        response = tavily_client.search(
-            query=query,
-            max_results=3
-        )
+        response = tavily_client.search(query=query, max_results=3)
         results = response.get("results", [])
         if not results:
             return "No web results found."
-
         combined = ""
         for r in results:
-            combined += f"Source: {r['url']}\n"
-            combined += f"Content: {r['content']}\n\n"
-
+            combined += f"Source: {r['url']}\nContent: {r['content']}\n\n"
         return f"From web search:\n{combined}"
-
     except Exception as e:
         return f"Web search failed: {str(e)}"
 
 
-# ─── TOOL 3: Combine Both Sources ───────────────────────
 @tool
 def search_both_tool(query: str) -> str:
     """
@@ -92,18 +86,11 @@ def search_both_tool(query: str) -> str:
     """
     doc_results = search_document_tool.invoke(query)
     web_results = web_search_tool.invoke(query)
-
     return f"{doc_results}\n\n{web_results}"
 
 
-# ─── CREATE AGENT ────────────────────────────────────────
 def create_agent():
-    tools = [
-        search_document_tool,
-        web_search_tool,
-        search_both_tool
-    ]
-
+    tools = [search_document_tool, web_search_tool, search_both_tool]
     agent = create_react_agent(
         model=llm,
         tools=tools,
@@ -128,10 +115,8 @@ Rules:
 
 def run_agent(query: str) -> str:
     agent = create_agent()
-
     result = agent.invoke({
         "messages": [{"role": "user", "content": query}]
     })
-
     final_message = result["messages"][-1]
     return final_message.content
