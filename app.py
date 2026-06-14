@@ -45,22 +45,6 @@ header[data-testid="stHeader"] { background: transparent; }
     position: relative;
     overflow: hidden;
 }
-.hero::before {
-    content: '';
-    position: absolute;
-    top: -60px; left: -60px;
-    width: 220px; height: 220px;
-    background: radial-gradient(circle, rgba(168,85,247,0.25), transparent 70%);
-    pointer-events: none;
-}
-.hero::after {
-    content: '';
-    position: absolute;
-    bottom: -60px; right: -60px;
-    width: 220px; height: 220px;
-    background: radial-gradient(circle, rgba(99,102,241,0.25), transparent 70%);
-    pointer-events: none;
-}
 .hero-icon {
     font-size: 64px;
     display: block;
@@ -117,58 +101,76 @@ header[data-testid="stHeader"] { background: transparent; }
     border-radius: 14px;
     padding: 20px;
     text-align: center;
-    transition: transform 0.2s, border-color 0.2s;
-}
-.feat-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(168,85,247,0.5);
 }
 .feat-card .icon { font-size: 28px; margin-bottom: 8px; }
-.feat-card h3 {
-    color: #e2e8f0;
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin: 0 0 6px 0;
-}
-.feat-card p {
-    color: #94a3b8;
-    font-size: 0.8rem;
-    margin: 0;
-    line-height: 1.4;
-}
+.feat-card h3 { color: #e2e8f0; font-size: 0.95rem; font-weight: 600; margin: 0 0 6px 0; }
+.feat-card p { color: #94a3b8; font-size: 0.8rem; margin: 0; line-height: 1.4; }
 
+/* ===== CHAT MESSAGES ===== */
 [data-testid="stChatMessage"] {
-    background: rgba(255,255,255,0.05) !important;
+    background: rgba(255,255,255,0.08) !important;
     border-radius: 12px !important;
     margin-bottom: 8px !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
 }
-
-[data-testid="stChatInput"] textarea {
-    background: rgba(255,255,255,0.08) !important;
-    border: 1px solid rgba(168,85,247,0.4) !important;
-    border-radius: 12px !important;
+[data-testid="stChatMessage"] p,
+[data-testid="stChatMessage"] div,
+[data-testid="stChatMessage"] span {
     color: #e2e8f0 !important;
 }
 
+/* ===== CHAT INPUT ===== */
+[data-testid="stChatInput"] {
+    border: 1px solid rgba(168,85,247,0.4) !important;
+    border-radius: 12px !important;
+    background: rgba(255,255,255,0.08) !important;
+}
+[data-testid="stChatInput"] textarea {
+    background: transparent !important;
+    color: #e2e8f0 !important;
+    caret-color: #a78bfa !important;
+}
+
+/* ===== FILE UPLOADER ===== */
+[data-testid="stFileUploader"] {
+    background: rgba(255,255,255,0.05) !important;
+    border-radius: 12px !important;
+    padding: 8px !important;
+}
+[data-testid="stFileDropzone"] {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px dashed rgba(168,85,247,0.5) !important;
+    border-radius: 10px !important;
+}
+[data-testid="stFileUploader"] p,
+[data-testid="stFileUploader"] span,
+[data-testid="stFileUploader"] div,
+[data-testid="stFileUploader"] small {
+    color: #c4b5fd !important;
+}
+[data-testid="stFileUploader"] button {
+    background: rgba(124,58,237,0.3) !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(168,85,247,0.4) !important;
+    border-radius: 8px !important;
+}
+
+/* ===== SIDEBAR ===== */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #1e1b4b, #312e81) !important;
     border-right: 1px solid rgba(168,85,247,0.2) !important;
 }
-[data-testid="stSidebar"] * { color: #e2e8f0 !important; }
-
-[data-testid="stFileUploader"] {
-    background: rgba(255,255,255,0.05) !important;
-    border: 1px dashed rgba(168,85,247,0.5) !important;
-    border-radius: 12px !important;
-}
-[data-testid="stFileUploader"] * { color: #c4b5fd !important; }
-[data-testid="stFileDropzone"] {
-    background: rgba(255,255,255,0.03) !important;
-    border: 1px dashed rgba(168,85,247,0.4) !important;
-    border-radius: 10px !important;
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] label {
+    color: #e2e8f0 !important;
 }
 
+/* ===== BUTTONS ===== */
 .stButton > button {
     background: linear-gradient(135deg, #7c3aed, #4f46e5) !important;
     color: white !important;
@@ -177,7 +179,6 @@ header[data-testid="stHeader"] { background: transparent; }
     font-weight: 600 !important;
     padding: 10px 20px !important;
     width: 100% !important;
-    transition: opacity 0.2s !important;
 }
 .stButton > button:hover { opacity: 0.85 !important; }
 
@@ -202,49 +203,35 @@ header[data-testid="stHeader"] { background: transparent; }
     color: #fde68a;
 }
 
-.step {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 12px;
-}
+.step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
 .step-num {
     background: linear-gradient(135deg, #7c3aed, #4f46e5);
     color: white;
-    width: 24px;
-    height: 24px;
+    width: 24px; height: 24px;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 700;
-    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
 }
-.step-text { color: #c4b5fd; font-size: 0.85rem; line-height: 1.4; }
+.step-text { color: #c4b5fd !important; font-size: 0.85rem; line-height: 1.4; }
 
 .chat-section-title {
-    font-family: 'Space Grotesk', sans-serif;
     color: #e2e8f0;
     font-size: 1.2rem;
     font-weight: 700;
     margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
 .empty-chat {
     text-align: center;
     padding: 40px;
-    color: #64748b;
+    color: #94a3b8;
     background: rgba(255,255,255,0.02);
     border: 1px dashed rgba(255,255,255,0.1);
     border-radius: 16px;
     margin-bottom: 16px;
 }
 .empty-chat .empty-icon { font-size: 40px; margin-bottom: 12px; }
-.empty-chat p { font-size: 0.9rem; line-height: 1.6; }
+.empty-chat p { font-size: 0.9rem; line-height: 1.6; color: #94a3b8 !important; }
 .empty-chat em { color: #a78bfa; }
 
 .footer {
@@ -258,6 +245,8 @@ header[data-testid="stHeader"] { background: transparent; }
 .footer span { color: #a78bfa; }
 </style>
 """, unsafe_allow_html=True)
+
+
 
 st.markdown("""
 <div class="hero">
