@@ -1,6 +1,9 @@
-st.title("✨ Updated Version ✨")
+import streamlit as st  # This must come FIRST
 import os
 import sys
+
+st.title("✨ Updated Version ✨")
+# rest of your code...
 
 os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN", "")
 os.environ["HUGGING_FACE_HUB_TOKEN"] = os.getenv("HF_TOKEN", "")
