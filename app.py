@@ -157,6 +157,18 @@ header[data-testid="stHeader"] { background: transparent; }
 }
 [data-testid="stSidebar"] * { color: #e2e8f0 !important; }
 
+[data-testid="stFileUploader"] {
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px dashed rgba(168,85,247,0.5) !important;
+    border-radius: 12px !important;
+}
+[data-testid="stFileUploader"] * { color: #c4b5fd !important; }
+[data-testid="stFileDropzone"] {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px dashed rgba(168,85,247,0.4) !important;
+    border-radius: 10px !important;
+}
+
 .stButton > button {
     background: linear-gradient(135deg, #7c3aed, #4f46e5) !important;
     color: white !important;
