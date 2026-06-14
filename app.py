@@ -1,9 +1,5 @@
-import streamlit as st  # This must come FIRST
 import os
 import sys
-
-st.title("✨ Updated Version ✨")
-# rest of your code...
 
 os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN", "")
 os.environ["HUGGING_FACE_HUB_TOKEN"] = os.getenv("HF_TOKEN", "")
@@ -13,7 +9,7 @@ import streamlit as st
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
 from rag import load_and_index_pdf, load_existing_vectorstore, search_documents
-from agent import my_function_name as run_agent
+from agent import run_agent
 
 
 UPLOAD_DIR = "/tmp/uploads"
