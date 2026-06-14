@@ -4,7 +4,7 @@ from langchain_groq import ChatGroq
 from langchain.tools import tool
 from langgraph.prebuilt import create_react_agent
 from tavily import TavilyClient
-from .rag import search_documents, load_existing_vectorstore
+from app.rag import search_documents, load_existing_vectorstore
 
 # Load API keys
 load_dotenv()
@@ -46,11 +46,11 @@ def search_document_tool(query: str) -> str:
     vs = get_vectorstore()
     if vs is None:
         return "No documents uploaded yet. Please upload a PDF first."
-    
+
     results = search_documents(query, vs)
     if not results:
         return "No relevant information found in documents."
-    
+
     return f"From documents:\n{results}"
 
 
@@ -70,15 +70,14 @@ def web_search_tool(query: str) -> str:
         results = response.get("results", [])
         if not results:
             return "No web results found."
-        
-        # Combine top results
+
         combined = ""
         for r in results:
             combined += f"Source: {r['url']}\n"
             combined += f"Content: {r['content']}\n\n"
-        
+
         return f"From web search:\n{combined}"
-    
+
     except Exception as e:
         return f"Web search failed: {str(e)}"
 
@@ -93,21 +92,18 @@ def search_both_tool(query: str) -> str:
     """
     doc_results = search_document_tool.invoke(query)
     web_results = web_search_tool.invoke(query)
-    
+
     return f"{doc_results}\n\n{web_results}"
 
 
 # ─── CREATE AGENT ────────────────────────────────────────
 def create_agent():
-    """
-    Creates the LangGraph ReAct agent with all tools
-    """
     tools = [
         search_document_tool,
         web_search_tool,
         search_both_tool
     ]
-    
+
     agent = create_react_agent(
         model=llm,
         tools=tools,
@@ -131,15 +127,11 @@ Rules:
 
 
 def run_agent(query: str) -> str:
-    """
-    Runs the agent with a user query and returns the answer
-    """
     agent = create_agent()
-    
+
     result = agent.invoke({
         "messages": [{"role": "user", "content": query}]
     })
-    
-    # Extract final answer from messages
+
     final_message = result["messages"][-1]
     return final_message.content
