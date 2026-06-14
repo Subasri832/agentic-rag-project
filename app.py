@@ -19,9 +19,9 @@ from agent import run_agent
 load_dotenv()
 
 # FASTAPI BACKEND
-api = FastAPI()
+fastapi_app = FastAPI()
 
-api.add_middleware(
+fastapi_app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
@@ -38,12 +38,12 @@ class QueryRequest(BaseModel):
     question: str
 
 
-@api.get("/")
+@fastapi_app.get("/")
 def home():
     return {"status": "running"}
 
 
-@api.post("/upload")
+@fastapi_app.post("/upload")
 async def upload_pdf(file: UploadFile = File(...)):
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files allowed")
@@ -57,7 +57,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@api.post("/ask")
+@fastapi_app.post("/ask")
 async def ask_question(request: QueryRequest):
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
@@ -68,7 +68,7 @@ async def ask_question(request: QueryRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@api.get("/status")
+@fastapi_app.get("/status")
 def check_status():
     vectorstore_path = "vectorstore"
     has_documents = os.path.exists(vectorstore_path) and \
@@ -78,7 +78,7 @@ def check_status():
 
 # START FASTAPI IN BACKGROUND THREAD
 def run_fastapi():
-    uvicorn.run(api, host="0.0.0.0", port=8000)
+    uvicorn.run(fastapi_app, host="0.0.0.0", port=8000)
 
 thread = threading.Thread(target=run_fastapi, daemon=True)
 thread.start()
