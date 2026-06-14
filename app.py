@@ -26,7 +26,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700&family=Space+Grotesk:wght=600;700&display=swap');
 
 * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
 
@@ -38,7 +38,7 @@ st.markdown("""
 header[data-testid="stHeader"] { background: transparent !important; }
 .block-container { padding-top: 2rem !important; }
 
-/* ── GLOW ORBS (decorative) ── */
+/* ── GLOW ORBS ── */
 .glow-orb-1 {
     position: fixed; top: -100px; left: -100px;
     width: 400px; height: 400px;
@@ -81,15 +81,18 @@ header[data-testid="stHeader"] { background: transparent !important; }
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
 .hero-subtitle {
-    color: #64748b; font-size: 0.92rem;
+    color: #94a3b8; font-size: 0.92rem;
     max-width: 520px; line-height: 1.6; margin: 0 0 18px 0;
 }
-.tech-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 28px; }
+
+/* ── TECH PILLS (HIGH CONTRAST) ── */
+.tech-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
 .tech-pill {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 6px; padding: 3px 11px;
-    font-size: 11px; color: #94a3b8;
+    background: rgba(99, 102, 241, 0.2) !important;
+    border: 1px solid rgba(129, 140, 248, 0.5) !important;
+    border-radius: 6px; padding: 4px 12px;
+    font-size: 12px; font-weight: 600; color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
 /* ── STATS BAR ── */
@@ -119,7 +122,7 @@ header[data-testid="stHeader"] { background: transparent !important; }
     display: block;
 }
 .stat-label {
-    font-size: 0.68rem; color: #475569;
+    font-size: 0.68rem; color: #94a3b8;
     text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px;
 }
 
@@ -147,35 +150,6 @@ header[data-testid="stHeader"] { background: transparent !important; }
     margin-left: 48px !important;
 }
 
-/* ── CHAT INPUT ── */
-[data-testid="stChatInput"] {
-    background: rgba(20, 20, 50, 0.95) !important;
-    border: 1px solid rgba(129,140,248,0.5) !important;
-    border-radius: 14px !important;
-    box-shadow: 0 0 30px rgba(99,102,241,0.15), 0 0 60px rgba(99,102,241,0.05), inset 0 1px 0 rgba(255,255,255,0.08) !important;
-}
-[data-testid="stChatInput"] textarea {
-    background: transparent !important;
-    color: #c4b5fd !important;
-    caret-color: #818cf8 !important;
-    font-size: 0.92rem !important;
-}
-[data-testid="stChatInput"] textarea::placeholder { color: #6366f1 !important; }
-
-/* ── FIX WHITE GAP ── */
-.stApp > div, .main, .main > div, [data-testid="stAppViewContainer"] {
-    background: transparent !important;
-}
-section[data-testid="stBottom"] {
-    background: #0a0a14 !important;
-    border-top: 1px solid rgba(99,102,241,0.15) !important;
-    padding: 12px 16px !important;
-}
-footer { display: none !important; }
-.stApp {
-    background: radial-gradient(ellipse at 20% 0%, #1a1040 0%, #0d0d1a 50%, #0a0a14 100%) !important;
-}
-
 /* ── SIDEBAR ── */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #0f0f1e 0%, #0d0d1a 100%) !important;
@@ -195,7 +169,6 @@ footer { display: none !important; }
     border: 2px dashed rgba(99,102,241,0.3) !important;
     border-radius: 12px !important;
     padding: 8px !important;
-    transition: border-color 0.2s !important;
 }
 [data-testid="stFileDropzone"] { background: transparent !important; border: none !important; }
 [data-testid="stFileUploader"] p,
@@ -217,11 +190,6 @@ footer { display: none !important; }
     padding: 10px 20px !important; width: 100% !important;
     font-size: 0.88rem !important;
     box-shadow: 0 4px 15px rgba(99,102,241,0.3) !important;
-    transition: all 0.2s !important;
-}
-.stButton > button:hover {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 6px 20px rgba(99,102,241,0.4) !important;
 }
 
 /* ── STATUS BADGES ── */
@@ -243,7 +211,7 @@ footer { display: none !important; }
 
 /* ── STEPS ── */
 .section-label {
-    font-size: 0.68rem; font-weight: 600; color: #374151;
+    font-size: 0.68rem; font-weight: 600; color: #94a3b8;
     text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;
 }
 .step { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
@@ -254,34 +222,24 @@ footer { display: none !important; }
     display: flex; align-items: center; justify-content: center;
     font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
 }
-.step-text { color: #64748b !important; font-size: 0.82rem; line-height: 1.5; padding-top: 2px; }
+.step-text { color: #94a3b8 !important; font-size: 0.82rem; line-height: 1.5; padding-top: 2px; }
 
-/* ── SOURCE TAG ── */
-.source-tag {
-    display: inline-block;
-    background: rgba(34,197,94,0.08);
-    border: 1px solid rgba(34,197,94,0.2);
-    color: #86efac; font-size: 11px;
-    padding: 2px 10px; border-radius: 20px; margin-top: 8px;
-}
-
-/* ── FOOTER ── */
+/* ── FOOTER HIGH CONTRAST ── */
 .footer {
     display: flex; align-items: center; justify-content: space-between;
     padding: 16px 4px;
-    border-top: 1px solid rgba(255,255,255,0.04);
+    border-top: 1px solid rgba(255,255,255,0.08);
     margin-top: 20px;
 }
-.footer-left { color: #1e293b; font-size: 0.75rem; }
+.footer-left { color: #94a3b8; font-size: 0.75rem; }
 .footer-tags { display: flex; gap: 6px; }
 .footer-tag {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
     border-radius: 6px; padding: 2px 10px;
-    font-size: 11px; color: #1e293b;
+    font-size: 11px; color: #94a3b8;
 }
 
-/* ── AI TOOL BADGE ── */
 .ai-tool-badge {
     display: flex; align-items: center; gap: 10px;
     background: rgba(99,102,241,0.06);
@@ -289,8 +247,44 @@ footer { display: none !important; }
     border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
 }
 .ai-tool-icon { font-size: 20px; }
-.ai-tool-text { font-size: 0.78rem; color: #64748b; line-height: 1.4; }
+.ai-tool-text { font-size: 0.78rem; color: #94a3b8; line-height: 1.4; }
 .ai-tool-text strong { color: #a5b4fc; display: block; font-size: 0.82rem; }
+
+/* ──────────────────────────────────────────────────────────────
+   ── CRITICAL FIX: CHAT INPUT ABSOLUTE FORCE INVISIBILITY FIX ── 
+   ────────────────────────────────────────────────────────────── */
+footer, footer * { display: none !important; }
+
+div[data-testid="stBottomBlockContainer"],
+section[data-testid="stBottom"] {
+    background-color: #0a0a14 !important;
+}
+
+/* Targets the complete custom layout frame */
+[data-testid="stChatInput"] {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(129,140,248,0.7) !important;
+    border-radius: 14px !important;
+}
+
+/* DEEP TARGETING FOR THE TEXT AREA ELEMENT AND ALL STREAMLIT GRAPHIC LAYERS */
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] p,
+[data-impl="st_chat_input"] textarea,
+.stChatInputContainer textarea {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    font-weight: 600 !important;
+    background-color: transparent !important;
+}
+
+/* Custom placeholder visibility control */
+[data-testid="stChatInput"] textarea::placeholder,
+.stChatInputContainer textarea::placeholder {
+    color: #555566 !important;
+    -webkit-text-fill-color: #555566 !important;
+    opacity: 0.85 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -378,8 +372,6 @@ if "messages" not in st.session_state:
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
-        if message["role"] == "assistant" and message.get("source"):
-            st.markdown(f'<span class="source-tag">📄 {message["source"]}</span>', unsafe_allow_html=True)
 
 if prompt := st.chat_input("✦ Ask anything about your document or any topic..."):
     st.session_state.messages.append({"role": "user", "content": prompt, "source": None})
@@ -395,8 +387,6 @@ if prompt := st.chat_input("✦ Ask anything about your document or any topic...
                 answer = f"❌ Error: {str(e)}"
                 source = None
         st.markdown(answer)
-        if source:
-            st.markdown(f'<span class="source-tag">📄 {source}</span>', unsafe_allow_html=True)
         st.session_state.messages.append({"role": "assistant", "content": answer, "source": source})
 
 # ── FOOTER ──
