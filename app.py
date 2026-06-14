@@ -149,18 +149,32 @@ header[data-testid="stHeader"] { background: transparent !important; }
 
 /* ── CHAT INPUT ── */
 [data-testid="stChatInput"] {
-    background: rgba(30, 30, 60, 0.85) !important;
-    border: 1px solid rgba(129,140,248,0.35) !important;
+    background: rgba(20, 20, 50, 0.95) !important;
+    border: 1px solid rgba(129,140,248,0.5) !important;
     border-radius: 14px !important;
-    box-shadow: 0 0 20px rgba(99,102,241,0.08), inset 0 1px 0 rgba(255,255,255,0.05) !important;
+    box-shadow: 0 0 30px rgba(99,102,241,0.15), 0 0 60px rgba(99,102,241,0.05), inset 0 1px 0 rgba(255,255,255,0.08) !important;
 }
 [data-testid="stChatInput"] textarea {
     background: transparent !important;
-    color: #e2e8f0 !important;
+    color: #c4b5fd !important;
     caret-color: #818cf8 !important;
     font-size: 0.92rem !important;
 }
-[data-testid="stChatInput"] textarea::placeholder { color: #4a5568 !important; }
+[data-testid="stChatInput"] textarea::placeholder { color: #6366f1 !important; }
+
+/* ── FIX WHITE GAP ── */
+.stApp > div, .main, .main > div, [data-testid="stAppViewContainer"] {
+    background: transparent !important;
+}
+section[data-testid="stBottom"] {
+    background: #0a0a14 !important;
+    border-top: 1px solid rgba(99,102,241,0.15) !important;
+    padding: 12px 16px !important;
+}
+footer { display: none !important; }
+.stApp {
+    background: radial-gradient(ellipse at 20% 0%, #1a1040 0%, #0d0d1a 50%, #0a0a14 100%) !important;
+}
 
 /* ── SIDEBAR ── */
 [data-testid="stSidebar"] {
