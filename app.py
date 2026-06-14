@@ -1,36 +1,22 @@
 import os
 import sys
 
-# ✅ MUST be first — set HF_TOKEN before anything else imports
-# This runs before rag.py loads the HuggingFace model
-try:
-    import streamlit as st
-    _token = st.secrets.get("HF_TOKEN", "")
-except Exception:
-    _token = ""
+# ✅ MUST be first — set HF_TOKEN before anything else loads
+os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN", "")
+os.environ["HUGGING_FACE_HUB_TOKEN"] = os.getenv("HF_TOKEN", "")
 
-if not _token:
-    from dotenv import load_dotenv
-    load_dotenv()
-    _token = os.getenv("HF_TOKEN", "")
+import streamlit as st
 
-if _token:
-    os.environ["HF_TOKEN"] = _token
-    os.environ["HUGGING_FACE_HUB_TOKEN"] = _token  # older HF versions use this key
-
-# ✅ NOW safe to import rag/agent (they load HuggingFace model here)
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
 from rag import load_and_index_pdf, load_existing_vectorstore, search_documents
 from agent import run_agent
 
-# Create folders
 UPLOAD_DIR = "/tmp/uploads"
 VECTORSTORE_DIR = "/tmp/vectorstore"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(VECTORSTORE_DIR, exist_ok=True)
 
-# PAGE CONFIG
 st.set_page_config(
     page_title="Agentic RAG Assistant",
     page_icon="🤖",
@@ -41,7 +27,6 @@ st.title("🤖 Agentic Document Intelligence")
 st.markdown("Upload your documents and ask questions — AI will search your docs and the web!")
 st.divider()
 
-# SIDEBAR
 with st.sidebar:
     st.header("📄 Upload Document")
     st.markdown("Upload a PDF to get started")
@@ -77,8 +62,6 @@ with st.sidebar:
     st.markdown("3. Ask any question below")
     st.markdown("4. AI searches docs + web!")
 
-
-# CHAT
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -87,10 +70,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 if prompt := st.chat_input("Ask anything about your document or any topic..."):
-    st.session_state.messages.append({
-        "role": "user",
-        "content": prompt
-    })
+    st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
@@ -100,12 +80,8 @@ if prompt := st.chat_input("Ask anything about your document or any topic..."):
                 answer = run_agent(prompt)
             except Exception as e:
                 answer = f"❌ Error: {str(e)}"
-
         st.markdown(answer)
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": answer
-        })
+        st.session_state.messages.append({"role": "assistant", "content": answer})
 
 st.divider()
 st.markdown(

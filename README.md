@@ -1,10 +1,10 @@
 ---
-title: Agentic RAG Document Intelligence
+title: Agentic RAG Assistant
 emoji: 🤖
-colorFrom: purple
-colorTo: blue
+colorFrom: blue
+colorTo: purple
 sdk: streamlit
-sdk_version: 1.58.0
+sdk_version: 1.32.0
 app_file: app.py
 pinned: false
 ---

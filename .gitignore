@@ -1,7 +1,5 @@
-venv/
+.env
+.streamlit/secrets.toml
 __pycache__/
 *.pyc
-.env
-app/uploads/
-app/vectorstore/
-*.egg-info/
+/tmp/
