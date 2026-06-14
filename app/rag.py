@@ -7,16 +7,16 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 load_dotenv()
 
-# ✅ Use /tmp for cloud platforms (Streamlit Cloud is read-only except /tmp)
 UPLOAD_FOLDER = "/tmp/uploads"
 VECTORSTORE_FOLDER = "/tmp/vectorstore"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(VECTORSTORE_FOLDER, exist_ok=True)
 
-# Load embeddings model once globally
+# ✅ By the time this runs, app.py has already set HF_TOKEN in os.environ
+# So HuggingFaceEmbeddings will pick it up automatically — no warning!
 embeddings = HuggingFaceEmbeddings(
-    model_name="all-MiniLM-L6-v2"
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
 )
 
 
@@ -34,14 +34,14 @@ def load_and_index_pdf(pdf_path: str):
     print(f"Total chunks created: {len(chunks)}")
 
     vectorstore = FAISS.from_documents(chunks, embeddings)
-    vectorstore.save_local(VECTORSTORE_FOLDER)   # ✅ saves to /tmp/vectorstore
+    vectorstore.save_local(VECTORSTORE_FOLDER)
     print("Vectorstore saved successfully!")
     return vectorstore
 
 
 def load_existing_vectorstore():
     vectorstore = FAISS.load_local(
-        VECTORSTORE_FOLDER,                      # ✅ loads from /tmp/vectorstore
+        VECTORSTORE_FOLDER,
         embeddings,
         allow_dangerous_deserialization=True
     )

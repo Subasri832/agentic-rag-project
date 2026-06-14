@@ -1,17 +1,30 @@
 import os
 import sys
-import streamlit as st
-from dotenv import load_dotenv
 
-# Fix import paths
+# ✅ MUST be first — set HF_TOKEN before anything else imports
+# This runs before rag.py loads the HuggingFace model
+try:
+    import streamlit as st
+    _token = st.secrets.get("HF_TOKEN", "")
+except Exception:
+    _token = ""
+
+if not _token:
+    from dotenv import load_dotenv
+    load_dotenv()
+    _token = os.getenv("HF_TOKEN", "")
+
+if _token:
+    os.environ["HF_TOKEN"] = _token
+    os.environ["HUGGING_FACE_HUB_TOKEN"] = _token  # older HF versions use this key
+
+# ✅ NOW safe to import rag/agent (they load HuggingFace model here)
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
 from rag import load_and_index_pdf, load_existing_vectorstore, search_documents
 from agent import run_agent
 
-load_dotenv()
-
-# Create folders (use /tmp on cloud platforms — local folders don't persist)
+# Create folders
 UPLOAD_DIR = "/tmp/uploads"
 VECTORSTORE_DIR = "/tmp/vectorstore"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
