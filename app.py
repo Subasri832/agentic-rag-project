@@ -1,89 +1,23 @@
 import os
 import sys
 import shutil
-import threading
-import time
 import requests
 import streamlit as st
+from dotenv import load_dotenv
 
 # Fix import paths
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
-from dotenv import load_dotenv
+from rag import load_and_index_pdf, load_existing_vectorstore, search_documents
+from agent import run_agent
+
 load_dotenv()
 
-# ─── START FASTAPI IN BACKGROUND ─────────────────────────
-def start_backend():
-    import uvicorn
-    from fastapi import FastAPI, UploadFile, File, HTTPException
-    from fastapi.middleware.cors import CORSMiddleware
-    from pydantic import BaseModel
-    from rag import load_and_index_pdf
-    from agent import run_agent
+# Create folders
+os.makedirs("uploads", exist_ok=True)
+os.makedirs("vectorstore", exist_ok=True)
 
-    backend = FastAPI()
-
-    backend.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
-    UPLOAD_FOLDER = "uploads"
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    os.makedirs("vectorstore", exist_ok=True)
-
-    class QueryRequest(BaseModel):
-        question: str
-
-    @backend.get("/")
-    def home():
-        return {"status": "running"}
-
-    @backend.get("/status")
-    def check_status():
-        vectorstore_path = "vectorstore"
-        has_documents = os.path.exists(vectorstore_path) and \
-                        len(os.listdir(vectorstore_path)) > 0
-        return {"status": "ready", "documents_uploaded": has_documents}
-
-    @backend.post("/upload")
-    async def upload_pdf(file: UploadFile = File(...)):
-        if not file.filename.endswith(".pdf"):
-            raise HTTPException(status_code=400, detail="Only PDF files allowed")
-        try:
-            file_path = os.path.join(UPLOAD_FOLDER, file.filename)
-            with open(file_path, "wb") as f:
-                shutil.copyfileobj(file.file, f)
-            load_and_index_pdf(file_path)
-            return {"status": "success", "message": f"{file.filename} uploaded!"}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
-
-    @backend.post("/ask")
-    async def ask_question(request: QueryRequest):
-        if not request.question.strip():
-            raise HTTPException(status_code=400, detail="Empty question")
-        try:
-            answer = run_agent(request.question)
-            return {"status": "success", "answer": answer}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
-
-    uvicorn.run(backend, host="0.0.0.0", port=8000)
-
-
-# Start backend in background thread
-thread = threading.Thread(target=start_backend, daemon=True)
-thread.start()
-
-# Give backend time to start
-time.sleep(3)
-
-# ─── STREAMLIT FRONTEND ───────────────────────────────────
-API_URL = "http://127.0.0.1:8000"
-
+# PAGE CONFIG
 st.set_page_config(
     page_title="Agentic RAG Assistant",
     page_icon="🤖",
@@ -94,6 +28,7 @@ st.title("🤖 Agentic Document Intelligence")
 st.markdown("Upload your documents and ask questions — AI will search your docs and the web!")
 st.divider()
 
+# SIDEBAR
 with st.sidebar:
     st.header("📄 Upload Document")
     st.markdown("Upload a PDF to get started")
@@ -104,35 +39,24 @@ with st.sidebar:
         if st.button("Upload & Index", type="primary"):
             with st.spinner("Uploading and indexing..."):
                 try:
-                    files = {
-                        "file": (
-                            uploaded_file.name,
-                            uploaded_file.getvalue(),
-                            "application/pdf"
-                        )
-                    }
-                    response = requests.post(
-                        f"{API_URL}/upload",
-                        files=files
-                    )
-                    if response.status_code == 200:
-                        st.success(f"✅ {uploaded_file.name} uploaded!")
-                        st.session_state["doc_uploaded"] = True
-                    else:
-                        st.error("Upload failed. Try again.")
+                    file_path = os.path.join("uploads", uploaded_file.name)
+                    with open(file_path, "wb") as f:
+                        f.write(uploaded_file.getvalue())
+                    load_and_index_pdf(file_path)
+                    st.success(f"✅ {uploaded_file.name} uploaded!")
+                    st.session_state["doc_uploaded"] = True
                 except Exception as e:
-                    st.error(f"Error: {str(e)}")
+                    st.error(f"Upload failed: {str(e)}")
 
     st.divider()
 
-    try:
-        status = requests.get(f"{API_URL}/status", timeout=3).json()
-        if status.get("documents_uploaded"):
-            st.success("📚 Documents ready!")
-        else:
-            st.warning("⚠️ No documents uploaded yet")
-    except:
-        st.warning("⏳ Backend starting...")
+    vectorstore_path = "vectorstore"
+    has_documents = os.path.exists(vectorstore_path) and \
+                    len(os.listdir(vectorstore_path)) > 0
+    if has_documents:
+        st.success("📚 Documents ready!")
+    else:
+        st.warning("⚠️ No documents uploaded yet")
 
     st.divider()
     st.markdown("**How to use:**")
@@ -142,6 +66,7 @@ with st.sidebar:
     st.markdown("4. AI searches docs + web!")
 
 
+# CHAT
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -160,17 +85,9 @@ if prompt := st.chat_input("Ask anything about your document or any topic..."):
     with st.chat_message("assistant"):
         with st.spinner("🤔 Agent is thinking..."):
             try:
-                response = requests.post(
-                    f"{API_URL}/ask",
-                    json={"question": prompt},
-                    timeout=60
-                )
-                if response.status_code == 200:
-                    answer = response.json().get("answer", "No answer received")
-                else:
-                    answer = f"Error: {response.status_code}"
+                answer = run_agent(prompt)
             except Exception as e:
-                answer = f"Could not connect to backend: {str(e)}"
+                answer = f"Error: {str(e)}"
 
         st.markdown(answer)
         st.session_state.messages.append({

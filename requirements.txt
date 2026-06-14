@@ -5,8 +5,6 @@ langchain-groq
 langchain-huggingface
 langgraph
 faiss-cpu
-fastapi
-uvicorn
 streamlit
 pypdf
 python-dotenv
