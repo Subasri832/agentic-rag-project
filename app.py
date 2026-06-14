@@ -1,16 +1,17 @@
 import os
 import sys
+from dotenv import load_dotenv
+load_dotenv()
 
 os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN", "")
 os.environ["HUGGING_FACE_HUB_TOKEN"] = os.getenv("HF_TOKEN", "")
 
-import streamlit as st  # v2
+import streamlit as st
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
 from rag import load_and_index_pdf, load_existing_vectorstore, search_documents
 from agent import run_agent
-
 
 UPLOAD_DIR = "/tmp/uploads"
 VECTORSTORE_DIR = "/tmp/vectorstore"
@@ -25,140 +26,146 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
+
+* { font-family: 'Inter', sans-serif; box-sizing: border-box; }
 
 .stApp {
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    background: radial-gradient(ellipse at 20% 0%, #1a1040 0%, #0d0d1a 50%, #0a0a14 100%);
     min-height: 100vh;
-    font-family: 'Inter', sans-serif;
 }
 
-header[data-testid="stHeader"] { background: transparent; }
+header[data-testid="stHeader"] { background: transparent !important; }
+.block-container { padding-top: 2rem !important; }
 
-.hero {
-    background: linear-gradient(120deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15));
-    border: 1px solid rgba(168,85,247,0.3);
-    border-radius: 20px;
-    padding: 48px 40px;
-    text-align: center;
-    margin-bottom: 32px;
-    position: relative;
-    overflow: hidden;
+/* ── GLOW ORBS (decorative) ── */
+.glow-orb-1 {
+    position: fixed; top: -100px; left: -100px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
 }
-.hero-icon {
-    font-size: 64px;
-    display: block;
-    margin-bottom: 12px;
-    animation: float 3s ease-in-out infinite;
+.glow-orb-2 {
+    position: fixed; bottom: -100px; right: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
 }
-@keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+
+/* ── TOP BADGE ── */
+.top-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(99,102,241,0.12);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 30px; padding: 5px 16px;
+    font-size: 11px; color: #a5b4fc; margin-bottom: 14px;
+    letter-spacing: 0.04em;
 }
-.hero h1 {
+.live-dot {
+    width: 7px; height: 7px; background: #22c55e;
+    border-radius: 50%; animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+/* ── HERO TITLE ── */
+.hero-title {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 2.6rem;
-    font-weight: 700;
-    background: linear-gradient(90deg, #a78bfa, #60a5fa, #f472b6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin: 0 0 12px 0;
+    font-size: 2.4rem; font-weight: 700;
+    color: #f1f5f9; margin: 0 0 10px 0; line-height: 1.15;
 }
-.hero p {
-    color: #c4b5fd;
-    font-size: 1.05rem;
-    max-width: 560px;
-    margin: 0 auto;
-    line-height: 1.6;
+.hero-title .accent { 
+    background: linear-gradient(90deg, #818cf8, #c084fc);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
-.tech-pills {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 20px;
+.hero-subtitle {
+    color: #64748b; font-size: 0.92rem;
+    max-width: 520px; line-height: 1.6; margin: 0 0 18px 0;
 }
+.tech-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 28px; }
 .tech-pill {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 20px;
-    padding: 4px 14px;
-    font-size: 12px;
-    color: #c4b5fd;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px; padding: 3px 11px;
+    font-size: 11px; color: #94a3b8;
 }
 
-.features {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 32px;
-    flex-wrap: wrap;
+/* ── STATS BAR ── */
+.stats-bar {
+    display: flex; gap: 1px; margin-bottom: 28px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px; overflow: hidden;
 }
-.feat-card {
-    flex: 1;
-    min-width: 140px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 14px;
-    padding: 20px;
-    text-align: center;
+.stat-item {
+    flex: 1; padding: 18px 20px;
+    background: rgba(13,13,26,0.8);
+    text-align: center; position: relative;
 }
-.feat-card .icon { font-size: 28px; margin-bottom: 8px; }
-.feat-card h3 { color: #e2e8f0; font-size: 0.95rem; font-weight: 600; margin: 0 0 6px 0; }
-.feat-card p { color: #94a3b8; font-size: 0.8rem; margin: 0; line-height: 1.4; }
+.stat-item:not(:last-child) { border-right: 1px solid rgba(255,255,255,0.05); }
+.stat-item::before {
+    content: ''; position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 40%; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(129,140,248,0.5), transparent);
+}
+.stat-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.8rem; font-weight: 700;
+    background: linear-gradient(135deg, #818cf8, #c084fc);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    display: block;
+}
+.stat-label {
+    font-size: 0.68rem; color: #475569;
+    text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px;
+}
 
-/* ===== CHAT MESSAGES ===== */
+/* ── CHAT AREA ── */
+.chat-wrapper {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px; padding: 20px;
+    margin-bottom: 16px; min-height: 200px;
+}
+
 [data-testid="stChatMessage"] {
-    background: rgba(255,255,255,0.08) !important;
-    border-radius: 12px !important;
-    margin-bottom: 8px !important;
-    border: 1px solid rgba(255,255,255,0.15) !important;
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.07) !important;
+    border-radius: 14px !important;
+    margin-bottom: 12px !important;
 }
 [data-testid="stChatMessage"] p,
 [data-testid="stChatMessage"] div,
-[data-testid="stChatMessage"] span {
-    color: #e2e8f0 !important;
+[data-testid="stChatMessage"] span { color: #e2e8f0 !important; }
+
+[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
+    background: rgba(99,102,241,0.08) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    margin-left: 48px !important;
 }
 
-/* ===== CHAT INPUT ===== */
+/* ── CHAT INPUT ── */
 [data-testid="stChatInput"] {
-    border: 1px solid rgba(168,85,247,0.4) !important;
-    border-radius: 12px !important;
-    background: rgba(255,255,255,0.08) !important;
+    background: rgba(30, 30, 60, 0.85) !important;
+    border: 1px solid rgba(129,140,248,0.35) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 0 20px rgba(99,102,241,0.08), inset 0 1px 0 rgba(255,255,255,0.05) !important;
 }
 [data-testid="stChatInput"] textarea {
     background: transparent !important;
     color: #e2e8f0 !important;
-    caret-color: #a78bfa !important;
+    caret-color: #818cf8 !important;
+    font-size: 0.92rem !important;
 }
+[data-testid="stChatInput"] textarea::placeholder { color: #4a5568 !important; }
 
-/* ===== FILE UPLOADER ===== */
-[data-testid="stFileUploader"] {
-    background: rgba(255,255,255,0.05) !important;
-    border-radius: 12px !important;
-    padding: 8px !important;
-}
-[data-testid="stFileDropzone"] {
-    background: rgba(255,255,255,0.03) !important;
-    border: 1px dashed rgba(168,85,247,0.5) !important;
-    border-radius: 10px !important;
-}
-[data-testid="stFileUploader"] p,
-[data-testid="stFileUploader"] span,
-[data-testid="stFileUploader"] div,
-[data-testid="stFileUploader"] small {
-    color: #c4b5fd !important;
-}
-[data-testid="stFileUploader"] button {
-    background: rgba(124,58,237,0.3) !important;
-    color: #e2e8f0 !important;
-    border: 1px solid rgba(168,85,247,0.4) !important;
-    border-radius: 8px !important;
-}
-
-/* ===== SIDEBAR ===== */
+/* ── SIDEBAR ── */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #1e1b4b, #312e81) !important;
-    border-right: 1px solid rgba(168,85,247,0.2) !important;
+    background: linear-gradient(180deg, #0f0f1e 0%, #0d0d1a 100%) !important;
+    border-right: 1px solid rgba(255,255,255,0.05) !important;
 }
 [data-testid="stSidebar"] p,
 [data-testid="stSidebar"] span,
@@ -166,137 +173,158 @@ header[data-testid="stHeader"] { background: transparent; }
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
 [data-testid="stSidebar"] h3,
-[data-testid="stSidebar"] label {
-    color: #e2e8f0 !important;
+[data-testid="stSidebar"] label { color: #e2e8f0 !important; }
+
+/* ── FILE UPLOADER ── */
+[data-testid="stFileUploader"] {
+    background: rgba(99,102,241,0.05) !important;
+    border: 2px dashed rgba(99,102,241,0.3) !important;
+    border-radius: 12px !important;
+    padding: 8px !important;
+    transition: border-color 0.2s !important;
+}
+[data-testid="stFileDropzone"] { background: transparent !important; border: none !important; }
+[data-testid="stFileUploader"] p,
+[data-testid="stFileUploader"] span,
+[data-testid="stFileUploader"] div,
+[data-testid="stFileUploader"] small { color: #818cf8 !important; }
+[data-testid="stFileUploader"] button {
+    background: rgba(99,102,241,0.15) !important;
+    color: #a5b4fc !important;
+    border: 1px solid rgba(99,102,241,0.25) !important;
+    border-radius: 8px !important;
 }
 
-/* ===== BUTTONS ===== */
+/* ── BUTTON ── */
 .stButton > button {
-    background: linear-gradient(135deg, #7c3aed, #4f46e5) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 10px !important;
-    font-weight: 600 !important;
-    padding: 10px 20px !important;
-    width: 100% !important;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+    color: white !important; border: none !important;
+    border-radius: 10px !important; font-weight: 600 !important;
+    padding: 10px 20px !important; width: 100% !important;
+    font-size: 0.88rem !important;
+    box-shadow: 0 4px 15px rgba(99,102,241,0.3) !important;
+    transition: all 0.2s !important;
 }
-.stButton > button:hover { opacity: 0.85 !important; }
+.stButton > button:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(99,102,241,0.4) !important;
+}
 
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-top: 8px;
-}
+/* ── STATUS BADGES ── */
 .status-ready {
-    background: rgba(34,197,94,0.15);
-    border: 1px solid rgba(34,197,94,0.4);
-    color: #86efac;
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(34,197,94,0.08);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 30px; padding: 6px 14px;
+    font-size: 0.8rem; color: #86efac; font-weight: 500;
 }
 .status-empty {
-    background: rgba(251,191,36,0.15);
-    border: 1px solid rgba(251,191,36,0.4);
-    color: #fde68a;
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(251,191,36,0.08);
+    border: 1px solid rgba(251,191,36,0.2);
+    border-radius: 30px; padding: 6px 14px;
+    font-size: 0.8rem; color: #fde68a; font-weight: 500;
 }
+.green-dot { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
 
-.step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+/* ── STEPS ── */
+.section-label {
+    font-size: 0.68rem; font-weight: 600; color: #374151;
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;
+}
+.step { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
 .step-num {
-    background: linear-gradient(135deg, #7c3aed, #4f46e5);
-    color: white;
-    width: 24px; height: 24px;
-    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2));
+    border: 1px solid rgba(99,102,241,0.2);
+    color: #818cf8; width: 22px; height: 22px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+    font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
 }
-.step-text { color: #c4b5fd !important; font-size: 0.85rem; line-height: 1.4; }
+.step-text { color: #64748b !important; font-size: 0.82rem; line-height: 1.5; padding-top: 2px; }
 
-.chat-section-title {
-    color: #e2e8f0;
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin-bottom: 16px;
+/* ── SOURCE TAG ── */
+.source-tag {
+    display: inline-block;
+    background: rgba(34,197,94,0.08);
+    border: 1px solid rgba(34,197,94,0.2);
+    color: #86efac; font-size: 11px;
+    padding: 2px 10px; border-radius: 20px; margin-top: 8px;
 }
 
-.empty-chat {
-    text-align: center;
-    padding: 40px;
-    color: #94a3b8;
-    background: rgba(255,255,255,0.02);
-    border: 1px dashed rgba(255,255,255,0.1);
-    border-radius: 16px;
-    margin-bottom: 16px;
-}
-.empty-chat .empty-icon { font-size: 40px; margin-bottom: 12px; }
-.empty-chat p { font-size: 0.9rem; line-height: 1.6; color: #94a3b8 !important; }
-.empty-chat em { color: #a78bfa; }
-
+/* ── FOOTER ── */
 .footer {
-    text-align: center;
-    padding: 20px;
-    color: #64748b;
-    font-size: 0.8rem;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    margin-top: 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 4px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    margin-top: 20px;
 }
-.footer span { color: #a78bfa; }
+.footer-left { color: #1e293b; font-size: 0.75rem; }
+.footer-tags { display: flex; gap: 6px; }
+.footer-tag {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px; padding: 2px 10px;
+    font-size: 11px; color: #1e293b;
+}
+
+/* ── AI TOOL BADGE ── */
+.ai-tool-badge {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(99,102,241,0.06);
+    border: 1px solid rgba(99,102,241,0.12);
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
+}
+.ai-tool-icon { font-size: 20px; }
+.ai-tool-text { font-size: 0.78rem; color: #64748b; line-height: 1.4; }
+.ai-tool-text strong { color: #a5b4fc; display: block; font-size: 0.82rem; }
 </style>
 """, unsafe_allow_html=True)
 
+# Glow orbs
+st.markdown('<div class="glow-orb-1"></div><div class="glow-orb-2"></div>', unsafe_allow_html=True)
 
-
+# ── HEADER ──
 st.markdown("""
-<div class="hero">
-    <span class="hero-icon">🤖</span>
-    <h1>Agentic Document Intelligence</h1>
-    <p>Upload any PDF and ask questions — your AI agent searches your documents and the web to give you precise, sourced answers instantly.</p>
-    <div class="tech-pills">
-        <span class="tech-pill">LangChain</span>
-        <span class="tech-pill">LangGraph</span>
-        <span class="tech-pill">FAISS</span>
-        <span class="tech-pill">Groq LLaMA 3.3</span>
-        <span class="tech-pill">Tavily Search</span>
-        <span class="tech-pill">HuggingFace Embeddings</span>
-    </div>
+<div class="top-badge"><span class="live-dot"></span> AI powered · LangGraph agent · RAG pipeline</div>
+<div class="hero-title">Agentic Document <span class="accent">Intelligence</span></div>
+<div class="hero-subtitle">Upload any PDF and ask questions in natural language. Your AI agent searches your documents, the web, and combines insights intelligently.</div>
+<div class="tech-pills">
+  <span class="tech-pill">🔗 LangChain</span>
+  <span class="tech-pill">🕸 LangGraph</span>
+  <span class="tech-pill">⚡ FAISS</span>
+  <span class="tech-pill">🦙 Groq LLaMA 3.3</span>
+  <span class="tech-pill">🌐 Tavily Search</span>
+  <span class="tech-pill">🤗 HuggingFace</span>
 </div>
 """, unsafe_allow_html=True)
 
+# ── STATS BAR ──
 st.markdown("""
-<div class="features">
-    <div class="feat-card">
-        <div class="icon">📄</div>
-        <h3>Document Search</h3>
-        <p>Semantically searches inside your uploaded PDFs instantly</p>
-    </div>
-    <div class="feat-card">
-        <div class="icon">🌐</div>
-        <h3>Web Search</h3>
-        <p>Falls back to live internet when your docs lack the answer</p>
-    </div>
-    <div class="feat-card">
-        <div class="icon">🧠</div>
-        <h3>Agentic AI</h3>
-        <p>LLaMA 3.3 70B via Groq — fast, intelligent and context-aware</p>
-    </div>
-    <div class="feat-card">
-        <div class="icon">⚡</div>
-        <h3>Lightning Fast</h3>
-        <p>FAISS vector store for sub-second semantic retrieval</p>
-    </div>
+<div class="stats-bar">
+  <div class="stat-item"><span class="stat-num">3</span><span class="stat-label">AI Tools</span></div>
+  <div class="stat-item"><span class="stat-num">2</span><span class="stat-label">Sources Searched</span></div>
+  <div class="stat-item"><span class="stat-num">70B</span><span class="stat-label">Model Params</span></div>
+  <div class="stat-item"><span class="stat-num">RAG</span><span class="stat-label">Pipeline</span></div>
 </div>
 """, unsafe_allow_html=True)
 
+# ── SIDEBAR ──
 with st.sidebar:
-    st.markdown("### 📄 Upload Document")
-    st.markdown("<p style='color:#c4b5fd;font-size:0.85rem'>Upload a PDF to get started</p>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class="ai-tool-badge">
+      <div class="ai-tool-icon">🤖</div>
+      <div class="ai-tool-text">
+        <strong>Agentic RAG Assistant</strong>
+        Powered by LLaMA 3.3 70B via Groq
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader("Choose a PDF file", type=["pdf"], label_visibility="collapsed")
+    st.markdown('<div class="section-label">📁 Upload Document</div>', unsafe_allow_html=True)
+    uploaded_file = st.file_uploader("Drop your PDF here or click to browse", type=["pdf"], label_visibility="collapsed")
 
     if uploaded_file is not None:
-        if st.button("⬆️ Upload & Index", type="primary"):
+        if st.button("⬆ Upload & Index"):
             with st.spinner("Indexing your document..."):
                 try:
                     file_path = os.path.join(UPLOAD_DIR, uploaded_file.name)
@@ -308,60 +336,63 @@ with st.sidebar:
                 except Exception as e:
                     st.error(f"Upload failed: {str(e)}")
 
-    st.markdown("---")
-
+    st.markdown("<br>", unsafe_allow_html=True)
     has_documents = os.path.exists(VECTORSTORE_DIR) and len(os.listdir(VECTORSTORE_DIR)) > 0
     if has_documents:
-        st.markdown('<div class="status-badge status-ready">📚 Documents ready</div>', unsafe_allow_html=True)
+        st.markdown('<div class="status-ready"><span class="green-dot"></span> Documents ready to query</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="status-badge status-empty">⚠️ No documents yet</div>', unsafe_allow_html=True)
+        st.markdown('<div class="status-empty">⚠ No documents uploaded yet</div>', unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.markdown("### How to use")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<div class="section-label">📖 How to Use</div>', unsafe_allow_html=True)
     st.markdown("""
-    <div class="step"><div class="step-num">1</div><div class="step-text">Upload a PDF using the uploader above</div></div>
+    <div class="step"><div class="step-num">1</div><div class="step-text">Upload your PDF document</div></div>
     <div class="step"><div class="step-num">2</div><div class="step-text">Click Upload & Index to process it</div></div>
-    <div class="step"><div class="step-num">3</div><div class="step-text">Type your question in the chat below</div></div>
-    <div class="step"><div class="step-num">4</div><div class="step-text">AI searches your docs and the web!</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">Ask any question in the chat</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-text">AI searches docs and web together</div></div>
     """, unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.markdown("<p style='color:#64748b;font-size:0.75rem;text-align:center'>Built with LangChain · LangGraph · Streamlit</p>", unsafe_allow_html=True)
-
-st.markdown('<div class="chat-section-title">💬 Ask Anything</div>', unsafe_allow_html=True)
-
+# ── CHAT ──
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-if not st.session_state.messages:
-    st.markdown("""
-    <div class="empty-chat">
-        <div class="empty-icon">💡</div>
-        <p>Upload a PDF and start asking questions.<br>
-        Try <em>"Summarize this document"</em> or <em>"What are the key points?"</em></p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": "👋 Hello! I am your AI document assistant. Upload a PDF and I will answer questions from it — or search the web if needed.",
+        "source": None
+    })
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+        if message["role"] == "assistant" and message.get("source"):
+            st.markdown(f'<span class="source-tag">📄 {message["source"]}</span>', unsafe_allow_html=True)
 
-if prompt := st.chat_input("Ask anything about your document or any topic..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+if prompt := st.chat_input("✦ Ask anything about your document or any topic..."):
+    st.session_state.messages.append({"role": "user", "content": prompt, "source": None})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        with st.spinner("🤔 Thinking..."):
+        with st.spinner("🤔 Agent is thinking..."):
             try:
                 answer = run_agent(prompt)
+                source = "From your document"
             except Exception as e:
                 answer = f"❌ Error: {str(e)}"
+                source = None
         st.markdown(answer)
-        st.session_state.messages.append({"role": "assistant", "content": answer})
+        if source:
+            st.markdown(f'<span class="source-tag">📄 {source}</span>', unsafe_allow_html=True)
+        st.session_state.messages.append({"role": "assistant", "content": answer, "source": source})
 
+# ── FOOTER ──
 st.markdown("""
 <div class="footer">
-    Agentic RAG · Built with <span>LangChain</span>, <span>LangGraph</span> &amp; <span>Streamlit</span> · Powered by <span>LLaMA 3.3 70B</span>
+  <div class="footer-left">Agentic RAG Document Intelligence · Built with LangChain, LangGraph & Streamlit</div>
+  <div class="footer-tags">
+    <span class="footer-tag">Python</span>
+    <span class="footer-tag">LangGraph</span>
+    <span class="footer-tag">Streamlit</span>
+  </div>
 </div>
 """, unsafe_allow_html=True)
