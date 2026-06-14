@@ -4,7 +4,7 @@ import sys
 os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN", "")
 os.environ["HUGGING_FACE_HUB_TOKEN"] = os.getenv("HF_TOKEN", "")
 
-import streamlit as st
+import streamlit as st  # v2
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
