@@ -1,7 +1,6 @@
 import os
 import sys
 
-# ✅ MUST be first — set HF_TOKEN before anything else loads
 os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN", "")
 os.environ["HUGGING_FACE_HUB_TOKEN"] = os.getenv("HF_TOKEN", "")
 
@@ -18,27 +17,23 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(VECTORSTORE_DIR, exist_ok=True)
 
 st.set_page_config(
-    page_title="Agentic RAG Assistant",
+    page_title="Agentic Document Intelligence",
     page_icon="🤖",
     layout="wide"
 )
 
-# ── Custom CSS ──────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@700&display=swap');
 
-/* Global background */
 .stApp {
     background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
     min-height: 100vh;
     font-family: 'Inter', sans-serif;
 }
 
-/* Hide default streamlit header */
 header[data-testid="stHeader"] { background: transparent; }
 
-/* Hero banner */
 .hero {
     background: linear-gradient(120deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15));
     border: 1px solid rgba(168,85,247,0.3);
@@ -73,7 +68,7 @@ header[data-testid="stHeader"] { background: transparent; }
 }
 @keyframes float {
     0%, 100% { transform: translateY(0px); }
-    50%       { transform: translateY(-10px); }
+    50% { transform: translateY(-10px); }
 }
 .hero h1 {
     font-family: 'Space Grotesk', sans-serif;
@@ -91,15 +86,31 @@ header[data-testid="stHeader"] { background: transparent; }
     margin: 0 auto;
     line-height: 1.6;
 }
+.tech-pills {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+}
+.tech-pill {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 12px;
+    color: #c4b5fd;
+}
 
-/* Feature cards row */
 .features {
     display: flex;
     gap: 16px;
     margin-bottom: 32px;
+    flex-wrap: wrap;
 }
 .feat-card {
     flex: 1;
+    min-width: 140px;
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 14px;
@@ -125,16 +136,6 @@ header[data-testid="stHeader"] { background: transparent; }
     line-height: 1.4;
 }
 
-/* Chat area */
-.chat-container {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-}
-
-/* Streamlit chat messages */
 [data-testid="stChatMessage"] {
     background: rgba(255,255,255,0.05) !important;
     border-radius: 12px !important;
@@ -142,7 +143,6 @@ header[data-testid="stHeader"] { background: transparent; }
     border: 1px solid rgba(255,255,255,0.08) !important;
 }
 
-/* Chat input */
 [data-testid="stChatInput"] textarea {
     background: rgba(255,255,255,0.08) !important;
     border: 1px solid rgba(168,85,247,0.4) !important;
@@ -150,14 +150,12 @@ header[data-testid="stHeader"] { background: transparent; }
     color: #e2e8f0 !important;
 }
 
-/* Sidebar */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #1e1b4b, #312e81) !important;
     border-right: 1px solid rgba(168,85,247,0.2) !important;
 }
 [data-testid="stSidebar"] * { color: #e2e8f0 !important; }
 
-/* Upload button */
 .stButton > button {
     background: linear-gradient(135deg, #7c3aed, #4f46e5) !important;
     color: white !important;
@@ -170,7 +168,6 @@ header[data-testid="stHeader"] { background: transparent; }
 }
 .stButton > button:hover { opacity: 0.85 !important; }
 
-/* Status badge */
 .status-badge {
     display: inline-flex;
     align-items: center;
@@ -192,7 +189,6 @@ header[data-testid="stHeader"] { background: transparent; }
     color: #fde68a;
 }
 
-/* How to use steps */
 .step {
     display: flex;
     align-items: flex-start;
@@ -214,7 +210,30 @@ header[data-testid="stHeader"] { background: transparent; }
 }
 .step-text { color: #c4b5fd; font-size: 0.85rem; line-height: 1.4; }
 
-/* Footer */
+.chat-section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    color: #e2e8f0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.empty-chat {
+    text-align: center;
+    padding: 40px;
+    color: #64748b;
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 16px;
+    margin-bottom: 16px;
+}
+.empty-chat .empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-chat p { font-size: 0.9rem; line-height: 1.6; }
+.empty-chat em { color: #a78bfa; }
+
 .footer {
     text-align: center;
     padding: 20px;
@@ -227,45 +246,50 @@ header[data-testid="stHeader"] { background: transparent; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Hero Section ─────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
     <span class="hero-icon">🤖</span>
     <h1>Agentic Document Intelligence</h1>
-    <p>Upload any PDF and ask questions — your AI searches your documents and the web to give you precise, sourced answers instantly.</p>
+    <p>Upload any PDF and ask questions — your AI agent searches your documents and the web to give you precise, sourced answers instantly.</p>
+    <div class="tech-pills">
+        <span class="tech-pill">LangChain</span>
+        <span class="tech-pill">LangGraph</span>
+        <span class="tech-pill">FAISS</span>
+        <span class="tech-pill">Groq LLaMA 3.3</span>
+        <span class="tech-pill">Tavily Search</span>
+        <span class="tech-pill">HuggingFace Embeddings</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ── Feature Cards ─────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="features">
     <div class="feat-card">
         <div class="icon">📄</div>
         <h3>Document Search</h3>
-        <p>Instantly searches inside your uploaded PDFs with semantic understanding</p>
+        <p>Semantically searches inside your uploaded PDFs instantly</p>
     </div>
     <div class="feat-card">
         <div class="icon">🌐</div>
         <h3>Web Search</h3>
-        <p>Falls back to live internet search when your docs don't have the answer</p>
+        <p>Falls back to live internet when your docs lack the answer</p>
     </div>
     <div class="feat-card">
         <div class="icon">🧠</div>
         <h3>Agentic AI</h3>
-        <p>Powered by LLaMA 3.3 70B via Groq — fast, intelligent, and context-aware</p>
+        <p>LLaMA 3.3 70B via Groq — fast, intelligent and context-aware</p>
     </div>
     <div class="feat-card">
         <div class="icon">⚡</div>
         <h3>Lightning Fast</h3>
-        <p>FAISS vector store with HuggingFace embeddings for sub-second retrieval</p>
+        <p>FAISS vector store for sub-second semantic retrieval</p>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("### 📄 Upload Document")
-    st.markdown("<p style='color:#c4b5fd; font-size:0.85rem;'>Upload a PDF to get started</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#c4b5fd;font-size:0.85rem'>Upload a PDF to get started</p>", unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader("Choose a PDF file", type=["pdf"], label_visibility="collapsed")
 
@@ -300,19 +324,19 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.markdown("<p style='color:#64748b; font-size:0.75rem; text-align:center;'>Built with LangChain · LangGraph · Streamlit</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#64748b;font-size:0.75rem;text-align:center'>Built with LangChain · LangGraph · Streamlit</p>", unsafe_allow_html=True)
 
-# ── Chat Section ──────────────────────────────────────────────────────────────
-st.markdown("### 💬 Ask Anything")
+st.markdown('<div class="chat-section-title">💬 Ask Anything</div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 if not st.session_state.messages:
     st.markdown("""
-    <div style='text-align:center; padding: 40px; color: #64748b;'>
-        <div style='font-size: 40px; margin-bottom: 12px;'>💡</div>
-        <p style='font-size: 0.95rem;'>Upload a PDF and start asking questions.<br>Try <em>"Summarize this document"</em> or <em>"What are the key points?"</em></p>
+    <div class="empty-chat">
+        <div class="empty-icon">💡</div>
+        <p>Upload a PDF and start asking questions.<br>
+        Try <em>"Summarize this document"</em> or <em>"What are the key points?"</em></p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -334,9 +358,8 @@ if prompt := st.chat_input("Ask anything about your document or any topic..."):
         st.markdown(answer)
         st.session_state.messages.append({"role": "assistant", "content": answer})
 
-# ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="footer">
-    Agentic RAG · Built with <span>LangChain</span>, <span>LangGraph</span> & <span>Streamlit</span> · Powered by <span>LLaMA 3.3 70B</span>
+    Agentic RAG · Built with <span>LangChain</span>, <span>LangGraph</span> &amp; <span>Streamlit</span> · Powered by <span>LLaMA 3.3 70B</span>
 </div>
 """, unsafe_allow_html=True)
