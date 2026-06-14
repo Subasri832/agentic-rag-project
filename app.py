@@ -1,7 +1,5 @@
 import os
 import sys
-import shutil
-import requests
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -13,9 +11,11 @@ from agent import run_agent
 
 load_dotenv()
 
-# Create folders
-os.makedirs("uploads", exist_ok=True)
-os.makedirs("vectorstore", exist_ok=True)
+# Create folders (use /tmp on cloud platforms — local folders don't persist)
+UPLOAD_DIR = "/tmp/uploads"
+VECTORSTORE_DIR = "/tmp/vectorstore"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(VECTORSTORE_DIR, exist_ok=True)
 
 # PAGE CONFIG
 st.set_page_config(
@@ -39,7 +39,7 @@ with st.sidebar:
         if st.button("Upload & Index", type="primary"):
             with st.spinner("Uploading and indexing..."):
                 try:
-                    file_path = os.path.join("uploads", uploaded_file.name)
+                    file_path = os.path.join(UPLOAD_DIR, uploaded_file.name)
                     with open(file_path, "wb") as f:
                         f.write(uploaded_file.getvalue())
                     load_and_index_pdf(file_path)
@@ -50,9 +50,8 @@ with st.sidebar:
 
     st.divider()
 
-    vectorstore_path = "vectorstore"
-    has_documents = os.path.exists(vectorstore_path) and \
-                    len(os.listdir(vectorstore_path)) > 0
+    has_documents = os.path.exists(VECTORSTORE_DIR) and \
+                    len(os.listdir(VECTORSTORE_DIR)) > 0
     if has_documents:
         st.success("📚 Documents ready!")
     else:
@@ -87,7 +86,7 @@ if prompt := st.chat_input("Ask anything about your document or any topic..."):
             try:
                 answer = run_agent(prompt)
             except Exception as e:
-                answer = f"Error: {str(e)}"
+                answer = f"❌ Error: {str(e)}"
 
         st.markdown(answer)
         st.session_state.messages.append({
