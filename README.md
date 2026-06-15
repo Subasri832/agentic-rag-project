@@ -1,5 +1,5 @@
 ﻿---
-title: Agentic RAG Project
+Title: Agentic RAG Project
 emoji: 🤖
 colorFrom: blue
 colorTo: purple
@@ -205,9 +205,7 @@ This project was built end-to-end: from architecture design, RAG pipeline implem
 
 ---
 
-## 📄 License
 
-This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
